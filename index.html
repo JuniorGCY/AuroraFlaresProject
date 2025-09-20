@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Intro Vídeo + Minigame</title>
+    <style>
+      html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+      /* Camada de fundo com GIF */
+      #spaceBg { position:fixed; inset:0; z-index:0; display:block; } /* canvas 2D animado */
+      #introLayer { position:fixed; inset:0; display:grid; place-items:center; background:rgba(0,0,0,0.6); z-index:20; }
+      /* Janela de vídeo central, com tamanho fixo para manter qualidade */
+      #videoWrapper { background:#000; border-radius:12px; overflow:hidden; box-shadow:0 0 20px rgba(0,0,0,.8); }
+      #introVideo { width:960px; height:600px; object-fit:cover; display:block; }
+      .controls { margin-top:12px; display:flex; justify-content:center; gap:12px; }
+      .btn { background:rgba(0,0,0,.75); color:#e5e7eb; border:1px solid #374151; border-radius:8px; padding:10px 18px; cursor:pointer; font-size:14px; }
+      .btn:hover { background:rgba(0,0,0,.9); }
+      #gameLayer { position:fixed; inset:0; z-index:10; display:none; }
+      #hud { position:fixed; left:12px; top:12px; padding:8px 12px; background:rgba(0,0,0,.5); color:#e5e7eb; border-radius:10px; font-size:13px; z-index:15; display:none; }
+      /* Tela inicial com título e botão Start */
+      #startScreen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:25; }
+      .title { font-size: clamp(28px, 5vw, 56px); font-weight:700; color:#e5e7eb; letter-spacing:1px; text-shadow:0 8px 40px rgba(0,0,0,.6); }
+      .subtitle { color:#9ca3af; font-size: clamp(14px, 2vw, 18px); margin-top:-8px; }
+      .btnPrimary { background:#3b82f6; color:white; border:none; border-radius:999px; padding:12px 22px; font-size:16px; cursor:pointer; box-shadow:0 10px 30px rgba(59,130,246,.35); }
+      .btnPrimary:hover { filter:brightness(1.08); }
+      .fadeOut { animation: fadeOut .4s ease forwards; }
+      @keyframes fadeOut { to { opacity:0; visibility:hidden; } }
+      /* Cursor hint */
+      #lockHint { position:fixed; right:12px; top:12px; background:rgba(0,0,0,.55); color:#e5e7eb; padding:8px 12px; border-radius:10px; font-size:12px; z-index:12; display:none; }
+    </style>
+  </head>
+  <body>
+    <!-- Fundo animado do espaço (Canvas 2D) -->
+    <canvas id="spaceBg"></canvas>
+
+    <!-- Tela inicial (título + Start) -->
+    <div id="startScreen">
+      <div class="title">Aurora Flares Project</div>
+      <div class="subtitle">clique em Start para começar</div>
+      <button id="btnStart" class="btnPrimary">Start</button>
+    </div>
+
+    <!-- Intro em vídeo -->
+    <div id="introLayer" style="display:none">
+      <div id="videoWrapper">
+        <video id="introVideo" playsinline preload="auto" poster="./assets/poster.jpg">
+          <source src="intro.mp4" type="video/mp4" />
+          <source src="intro.webm" type="video/webm" />
+          Seu navegador não suporta vídeo HTML5.
+        </video>
+        <div class="controls">
+          <button id="btnPlay" class="btn">▶️ Reproduzir</button>
+          <button id="btnSkip" class="btn">⏭️ Pular intro</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camada do minigame -->
+    <div id="gameLayer">
+      <canvas id="app"></canvas>
+    </div>
+    <div id="hud">WASD para mover • Mouse para olhar • Esc para liberar o mouse</div>
+    <div id="lockHint">Clique no jogo para capturar o mouse</div>rar o mouse</div>
+
+    <script type="module">
+      const startScreen = document.getElementById('startScreen');
+      const introLayer = document.getElementById('introLayer');
+      const introVideo = document.getElementById('introVideo');
+      const btnPlay = document.getElementById('btnPlay');
+      const btnSkip = document.getElementById('btnSkip');
+      const btnStart = document.getElementById('btnStart');
+      const gameLayer = document.getElementById('gameLayer');
+      const hud = document.getElementById('hud');
+
+      let started = false;
+      async function startGame(){
+        if(started) return; started = true;
+        introLayer.style.display='none';
+        gameLayer.style.display='block';
+        hud.style.display='block';
+        await initSplineGame();
+      }
+
+      // Fluxo: Start → mostra vídeo e toca com som, mantendo starfield ao fundo
+      btnStart.addEventListener('click', async ()=>{
+        try{
+          startScreen.classList.add('fadeOut');
+          setTimeout(()=>{ startScreen.style.display='none'; }, 380);
+          introLayer.style.display='grid';
+          introVideo.currentTime = 0;
+          introVideo.muted = false; introVideo.volume = 1;
+          await introVideo.play();
+        }catch(e){ console.warn('Falha ao iniciar vídeo:', e); }
+      });
+
+      // botão Play (dentro do frame) opcional
+      btnPlay.addEventListener('click', async ()=>{ 
+        try{ introVideo.muted = false; introVideo.volume = 1; await introVideo.play(); } catch(e){} 
+      });
+      btnSkip.addEventListener('click', ()=> startGame());
+      introVideo.addEventListener('ended', ()=> startGame());
+      // removido autoplay automático
+    </script>
+
+    <!-- Starfield JS (Canvas 2D) -->
+    <script>
+      (function(){
+        const c = document.getElementById('spaceBg');
+        const ctx = c.getContext('2d');
+        let stars = []; let w=0,h=0, dpr=1;
+        function resize(){
+          dpr = Math.min(window.devicePixelRatio||1, 2);
+          w = c.width  = Math.floor(innerWidth * dpr);
+          h = c.height = Math.floor(innerHeight* dpr);
+          c.style.width = innerWidth+'px';
+          c.style.height= innerHeight+'px';
+          makeStars();
+        }
+        function makeStars(){
+          const count = Math.floor((innerWidth*innerHeight)/2800);
+          stars = new Array(count).fill(0).map(()=>({
+            x: Math.random()*w,
+            y: Math.random()*h,
+            z: Math.random()*0.8+0.2, // profundidade (parallax)
+            r: Math.random()*1.5+0.2,
+            tw: Math.random()*Math.PI*2,
+            sp: Math.random()*0.3+0.05 // velocidade
+          }));
+        }
+        function loop(){
+          requestAnimationFrame(loop);
+          // fundo gradiente sutil
+          const g = ctx.createRadialGradient(w*0.5,h*0.6,0,w*0.5,h*0.6,Math.max(w,h)*0.8);
+          g.addColorStop(0,'#02030a'); g.addColorStop(1,'#000000');
+          ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+
+          // "nebulosa" leve (ruído barato)
+          for(let i=0;i<2;i++){
+            const nx = Math.sin(performance.now()*0.0001+i)*w*0.25 + w*0.5;
+            const ny = Math.cos(performance.now()*0.00013+i)*h*0.25 + h*0.4;
+            const grd = ctx.createRadialGradient(nx,ny,0,nx,ny,Math.max(w,h)*0.35);
+            grd.addColorStop(0,'rgba(40,120,255,0.05)');
+            grd.addColorStop(1,'rgba(0,0,0,0)');
+            ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(nx,ny,Math.max(w,h)*0.35,0,Math.PI*2); ctx.fill();
+          }
+
+          // estrelas
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          for(const s of stars){
+            s.x += s.sp * s.z * 0.6; // drift horizontal
+            if(s.x>w+5) s.x = -5;
+            const twinkle = (Math.sin(s.tw += 0.05)+1)*0.5; // 0..1
+            const radius = (s.r + twinkle*0.6) * dpr;
+            ctx.fillStyle = `rgba(${200+55*s.z|0}, ${200+30*twinkle|0}, ${255|0}, ${0.6 + 0.4*twinkle})`;
+            ctx.beginPath(); ctx.arc(s.x, s.y, radius, 0, Math.PI*2); ctx.fill();
+          }
+          ctx.restore();
+
+          // raros "shooting stars"
+          if (Math.random()<0.01){
+            const sx = Math.random()*w*0.6, sy = Math.random()*h*0.4;
+            ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1*dpr;
+            ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+60*dpr, sy+12*dpr); ctx.stroke();
+          }
+        }
+        addEventListener('resize', resize); resize(); loop();
+      })();
+    </script>
+
+    <!-- === Spline runtime + controles WASD === -->
+    <script type="module">
+      // Caminho/URL da sua cena Spline (substitua pela sua .splinecode)
+      const SPLINE_SCENE = 'https://prod.spline.design/PS2wX9ytLGPssXp3/scene.splinecode';
+
+      async function initSplineGame(){
+        const { Application } = await import('https://unpkg.com/@splinetool/runtime/build/runtime.js');
+        const canvas = document.getElementById('app');
+        const app = new Application(canvas);
+        await app.load(SPLINE_SCENE);
+
+        // Obter câmera padrão da cena
+        let cam = app.getCamera();
+        // Se sua cena tem uma câmera com nome específico, você pode usar:
+        // const cam = app.findObjectByName('Camera');
+
+        // Controles: pointer lock + WASD (fly)
+        const lockHint = document.getElementById('lockHint');
+        const hud = document.getElementById('hud');
+        lockHint.style.display = 'block';
+
+        const state = { yaw: 0, pitch: 0, keys: {}, speed: 6 };
+
+        function applyCamRotation(){
+          // Limita pitch para evitar flip (em radianos)
+          const maxPitch = Math.PI/2 * 0.98;
+          if (state.pitch >  maxPitch) state.pitch =  maxPitch;
+          if (state.pitch < -maxPitch) state.pitch = -maxPitch;
+          cam.rotation.x = state.pitch; // pitch
+          cam.rotation.y = state.yaw;   // yaw
+        }
+
+        function moveCam(dt){
+          const cosY = Math.cos(state.yaw), sinY = Math.sin(state.yaw);
+          // Vetores no plano XZ a partir do yaw (ignora roll)
+          const fwdX = -Math.sin(state.yaw), fwdZ = -Math.cos(state.yaw); // olhando para -Z por padrão
+          const rightX =  Math.cos(state.yaw), rightZ = -Math.sin(state.yaw);
+
+          const sp = (state.keys['ShiftLeft']||state.keys['ShiftRight']) ? state.speed*1.8 : state.speed;
+          let vx=0, vy=0, vz=0;
+          if (state.keys['KeyW']) { vx += fwdX*sp; vz += fwdZ*sp; }
+          if (state.keys['KeyS']) { vx -= fwdX*sp; vz -= fwdZ*sp; }
+          if (state.keys['KeyD']) { vx += rightX*sp; vz += rightZ*sp; }
+          if (state.keys['KeyA']) { vx -= rightX*sp; vz -= rightZ*sp; }
+          if (state.keys['Space']) { vy += sp; }
+          if (state.keys['ControlLeft']||state.keys['ControlRight']) { vy -= sp; }
+
+          cam.position.x += vx*dt;
+          cam.position.y += vy*dt;
+          cam.position.z += vz*dt;
+        }
+
+        // Pointer lock
+        const gameLayer = document.getElementById('gameLayer');
+        const onClickLock = () => {
+          canvas.requestPointerLock();
+        };
+        gameLayer.addEventListener('click', onClickLock);
+
+        function onMouseMove(e){
+          if (document.pointerLockElement !== canvas) return;
+          const sens = 0.0025;
+          state.yaw   -= e.movementX * sens;
+          state.pitch -= e.movementY * sens;
+          applyCamRotation();
+        }
+        window.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('pointerlockchange', ()=>{
+          const locked = document.pointerLockElement === canvas;
+          lockHint.style.display = locked ? 'none' : 'block';
+        });
+
+        // Teclado
+        window.addEventListener('keydown', (e)=>{ state.keys[e.code]=true; });
+        window.addEventListener('keyup',   (e)=>{ state.keys[e.code]=false; });
+
+        // Loop
+        let last = performance.now();
+        function tick(){
+          const now = performance.now();
+          const dt = Math.min(0.05, (now-last)/1000); last = now;
+          moveCam(dt);
+          requestAnimationFrame(tick);
+        }
+        // Inicializa yaw/pitch a partir da rotação atual
+        state.pitch = cam.rotation.x||0; state.yaw = cam.rotation.y||0; applyCamRotation();
+        tick();
+
+        // Dica de HUD
+        hud.textContent = 'WASD para mover • Mouse para olhar • Esc para liberar o mouse';
+      }
+
+      // Exponho para o startGame (já trocamos lá em cima)
+      window.initSplineGame = initSplineGame;
+    </script>
+  </body>
+</html>
+</html>
