@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aurora Flares — Capítulo 1</title>
+  <style>
+    html,body{
+      margin:0;height:100%;background:#000;overflow:hidden;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue","Noto Sans",sans-serif
+    }
+    /* Vídeo em tela cheia */
+    #wrap{position:fixed;inset:0}
+    #vid{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:cover;background:#000;display:block
+    }
+
+    /* Fallback: só aparece se autoplay for bloqueado */
+    #tapOverlay{
+      position:fixed;inset:0;display:none;place-items:center;z-index:5;
+      background:rgba(0,0,0,.55);color:#e5e7eb;text-align:center
+    }
+    .tapBox{
+      border:1px solid #334155;border-radius:14px;padding:18px 22px;
+      background:rgba(0,0,0,.35);box-shadow:0 8px 32px rgba(0,0,0,.5)
+    }
+    .tapSmall{font-size:12px;color:#9ca3af;margin-top:6px}
+  </style>
+</head>
+<body>
+  <div id="wrap" aria-label="Cinemática">
+    <video id="vid" preload="auto" muted playsinline></video>
+  </div>
+
+  <!-- Fallback discreto (aparece só se necessário) -->
+  <div id="tapOverlay" role="button" tabindex="0" aria-label="Iniciar vídeo">
+    <div class="tapBox">
+      Toque para iniciar o vídeo
+      <div class="tapSmall">Alguns dispositivos exigem interação do usuário</div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ===================== CONFIG =====================
+    const VIDEO_SRC = '../../../assets/videos/Cap1.5Final.mp4';  // ajuste o caminho
+    const NEXT_URL  = '../02/index.html';                  // próximo capítulo
+    const MAX_FALLBACK_MS = 3 * 60 * 1000; // failsafe duro: 3 min
+    // ==================================================
+
+    const video = document.getElementById('vid');
+    const tapOverlay = document.getElementById('tapOverlay');
+
+    function goNext(){ window.location.href = NEXT_URL; }
+
+    // Tenta autoplay (muted+playsinline atende políticas mobile)
+    async function playAuto(){
+      // cache-busting leve contra CDN/HTTP cache
+      const src = VIDEO_SRC + (VIDEO_SRC.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+      video.src = src;
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('playsinline','');
+      video.setAttribute('webkit-playsinline','');
+
+      try {
+        await video.play();    // tenta iniciar sem interação
+        // Se desejar áudio, desmute logo após o play (gesto não garantido aqui):
+        // queueMicrotask(()=>{ try { video.muted = false; } catch {} });
+      } catch (err) {
+        // Autoplay bloqueado: exibe overlay de toque (sem botões).
+        tapOverlay.style.display = 'grid';
+      }
+    }
+
+    // Quando usuário tocar (só se necessário), iniciar
+    const startOnTap = async () => {
+      tapOverlay.style.display = 'none';
+      try {
+        // como houve gesto, é seguro liberar áudio se quiser:
+        video.muted = false;
+        await video.play();
+      } catch (e) {
+        // se ainda assim falhar, mantém mudo para garantir execução
+        video.muted = true;
+        try { await video.play(); } catch {}
+      }
+    };
+    tapOverlay.addEventListener('click', startOnTap);
+    tapOverlay.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') startOnTap(); });
+
+    // Navega quando o vídeo terminar
+    video.addEventListener('ended', goNext);
+
+    // Fallback: se por alguma razão 'ended' não vier, ao chegar ~97% segue
+    video.addEventListener('timeupdate', ()=>{
+      if (video.duration && video.currentTime / video.duration > 0.97) goNext();
+    });
+
+    // Fallback duro de tempo (garante continuidade pedagógica)
+    setTimeout(goNext, MAX_FALLBACK_MS);
+
+    // Performance: pausa se a aba perder foco visível; retoma ao voltar
+    document.addEventListener('visibilitychange', ()=>{
+      if (document.hidden) { try { video.pause(); } catch {} }
+      else { try { video.play(); } catch {} }
+    });
+
+    // Início automático
+    playAuto();
+  </script>
+</body>
+</html>

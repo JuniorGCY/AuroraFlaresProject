@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aurora Flares — Final Chapter (Quiz)</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --card:#111827; --muted:#9ca3af; --text:#e5e7eb;
+      --brand:#3b82f6; --ok:#22c55e; --bad:#ef4444; --border:#334155;
+    }
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+    .wrap{max-width:880px;margin:0 auto;padding:24px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+    h1{font-size:clamp(20px,3.6vw,28px);margin:0}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .spacer{height:14px}
+    .btn{
+      background:linear-gradient(180deg,#1f2937,#0f172a);
+      color:var(--text); border:1px solid var(--border); border-radius:999px;
+      padding:10px 16px; cursor:pointer; font-weight:600; letter-spacing:.2px;
+      box-shadow:0 6px 16px rgba(0,0,0,.35); transition:filter .15s ease,transform .12s ease
+    }
+    .btn:hover{filter:brightness(1.06)}
+    .btn:active{transform:scale(.98)}
+    .btn[disabled]{opacity:.6;cursor:default}
+    .btn.brand{background:linear-gradient(180deg,#2563eb,#1d4ed8);border-color:#1d4ed8}
+    .btn.ghost{background:transparent}
+    .btn.ok{background:linear-gradient(180deg,#16a34a,#15803d);border-color:#15803d}
+    .btn.bad{background:linear-gradient(180deg,#dc2626,#b91c1c);border-color:#b91c1c}
+
+    .prog{height:8px;background:#0b1220;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+    .prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#60a5fa)}
+
+    fieldset{border:1px solid var(--border);border-radius:12px;padding:12px;margin:0}
+    legend{padding:0 6px;color:#cbd5e1}
+    .opt{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;border:1px solid transparent;cursor:pointer}
+    .opt input{margin-top:4px;transform:scale(1.15)}
+    .opt:hover{background:#0b1220}
+    .opt.correct{border-color:rgba(34,197,94,.6);background:rgba(34,197,94,.06)}
+    .opt.wrong{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.06)}
+    .feedback{margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--border)}
+    .feedback.ok{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.08)}
+    .feedback.bad{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.08)}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:#cbd5e1}
+
+    .footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+    .hide{display:none!important}
+    .center{text-align:center}
+
+    /* LOCK: visual dos inputs travados */
+    .locked .opt{opacity:.9; cursor:default}
+    .locked .opt:hover{background:transparent}
+    :focus-visible{outline:2px solid #60a5fa;outline-offset:2px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 id="quizTitle">Final Chapter — Quiz</h1>
+      <div class="row">
+        <span class="pill" id="progressText">0/0</span>
+        <span class="pill" id="scoreText">Score: 0</span>
+      </div>
+    </header>
+
+    <div class="spacer"></div>
+    <div class="prog" aria-hidden="true"><i id="bar"></i></div>
+
+    <div class="spacer"></div>
+    <section id="screen" class="card" aria-live="polite"></section>
+
+    <div class="footer">
+      <button id="prevBtn" class="btn ghost">Previous</button>
+      <div class="row">
+        <button id="checkBtn" class="btn brand">Check answer</button>
+        <button id="nextBtn" class="btn" disabled>Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    /* ===========================
+       QUIZ CONFIGURATION
+       =========================== */
+    const QUIZ = {
+      title: "Final Chapter — Quiz",
+      nextUrl: "../certificate/index.html",
+      passScore: 70,
+      shuffleQuestions: true,
+      shuffleOptions: true,
+      storageKey: "aurora-quiz-final-en-v2", // bump key (evita conflito com versão anterior)
+
+      questions: [
+        { type: "mc",
+          prompt: "Tulok and Atka left Earth to learn about:",
+          options: ["Auroras","Space weather","Surfing","Magnetosphere"],
+          answer: 0,
+          feedback: "Their mission is to investigate auroras — luminous phenomena tied to the solar wind interacting with the magnetosphere."
+        },
+        { type: "mc",
+          prompt: "According to what happened with Ticasuk, on average how long does a CME take to reach Earth?",
+          options: ["2 days","2 minutes","2 hours","2 weeks"],
+          answer: 0,
+          feedback: "A Coronal Mass Ejection (CME) typically takes about ~2 days to reach Earth, depending on its speed."
+        },
+        { type: "mc",
+          prompt: "Which activity can trigger a geomagnetic storm?",
+          options: ["CME","Solar wind","Solar flare","Surfing"],
+          answer: 0,
+          feedback: "Geomagnetic storms are most often driven by CMEs striking the magnetosphere."
+        },
+        { type: "mc",
+          prompt: "What are the impacts of a solar flare?",
+          options: [
+            "They can disable some satellites, radios, and GPS, and can be very harmful to astronauts if directly exposed.",
+            "They cause geomagnetic storms.",
+            "They produce auroras and affect satellites, GPS, and radio communication.",
+            "They destroy planets."
+          ],
+          answer: 0,
+          feedback: "Flares can affect satellites, GPS, and radio; and pose health risks to astronauts outside atmospheric protection."
+        },
+        { type: "mc",
+          prompt: "What is space weather?",
+          options: [
+            "How solar activity influences space and planets.",
+            "It tells whether it will rain, snow, be hot or cold in space.",
+            "The shield that protects Earth.",
+            "The Sun’s climate."
+          ],
+          answer: 0,
+          feedback: "Space weather concerns the effects of solar activity (wind, flares, CMEs) on the space environment and technologies."
+        },
+        { type: "mc",
+          prompt: "Which are solar activities?",
+          options: [
+            "Solar wind, solar flare, and CME.",
+            "Surfing and solar wind.",
+            "Solar flare, magnetosphere, and plasma.",
+            "CME, solar wind, and magnetic storm."
+          ],
+          answer: 0,
+          feedback: "Core activities: solar wind, flares, and CMEs. (The magnetosphere is planetary, not solar.)"
+        },
+        { type: "mc",
+          prompt: "What is the magnetosphere?",
+          options: [
+            "A planet’s shield that protects from solar activity.",
+            "A place to surf.",
+            "A solar activity.",
+            "Where Ticasuk and Tukkutok live."
+          ],
+          answer: 0,
+          feedback: "The magnetosphere is the planet’s magnetic field region that deflects energetic solar particles."
+        },
+        { type: "mc",
+          prompt: "What does Ticasuk and Tukkutok’s species love to do?",
+          options: ["Surfing","Surfing","Surfing","Surfing"],
+          allCorrect: true,
+          answer: 0,
+          feedback: "A thematic trick: any option works — they love surfing!"
+        }
+      ]
+    };
+
+    /* ============== STATE/DOM ============== */
+    const titleEl = document.getElementById('quizTitle');
+    const screen  = document.getElementById('screen');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const checkBtn= document.getElementById('checkBtn');
+    const bar     = document.getElementById('bar');
+    const progressText = document.getElementById('progressText');
+    const scoreText    = document.getElementById('scoreText');
+
+    let state = {
+      idx: 0,
+      correctCount: 0,
+      answers: {},
+      checked: {},   // LOCK: true => questão já foi conferida e travada
+      order: [],
+      optionOrder: {}
+    };
+
+    /* ============== UTILS ============== */
+    function shufflePairs(arr){
+      const pairs = arr.map((v,i)=>[v,i]);
+      for(let i=pairs.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [pairs[i],pairs[j]] = [pairs[j],pairs[i]];
+      }
+      return pairs;
+    }
+    function pct(n, d){ return d ? Math.round((n/d)*100) : 0; }
+
+    /* ============== INIT ============== */
+    function init(){
+      titleEl.textContent = QUIZ.title;
+
+      const qIdx = QUIZ.questions.map((_,i)=>i);
+      state.order = QUIZ.shuffleQuestions ? shufflePairs(qIdx).map(p=>p[0]) : qIdx;
+
+      state.optionOrder = {};
+      state.order.forEach((qi)=>{
+        const q = QUIZ.questions[qi];
+        if(!q.options || !QUIZ.shuffleOptions){ state.optionOrder[qi] = null; return; }
+        const pairs = shufflePairs(q.options);
+        if(q.type === "mc" && !q.allCorrect){
+          const newIndex = pairs.findIndex(p=> p[1] === q.answer);
+          q.answer = newIndex;
+        }
+        q.options = pairs.map(p=>p[0]);
+        state.optionOrder[qi] = pairs.map(p=>p[1]);
+      });
+
+      render();
+    }
+
+    /* ============== RENDER ============== */
+    function render(){
+      const total = state.order.length;
+      const realIdx = state.order[state.idx];
+      const q = QUIZ.questions[realIdx];
+
+      progressText.textContent = `${state.idx+1}/${total}`;
+      scoreText.textContent    = `Score: ${pct(state.correctCount,total)}%`;
+      bar.style.width          = `${((state.idx)/Math.max(1,total))*100}%`;
+
+      const alreadyChecked = !!state.checked[realIdx];
+      prevBtn.disabled = state.idx===0;
+      nextBtn.disabled = !alreadyChecked;
+      checkBtn.disabled = alreadyChecked; // LOCK: não permite “rechecar” para mudar nota
+
+      screen.innerHTML = "";
+
+      const fs = document.createElement('fieldset');
+      fs.className = alreadyChecked ? 'locked' : ''; // LOCK: classe visual de bloqueio
+      const lg = document.createElement('legend'); lg.textContent = `Question ${state.idx+1}`;
+      fs.appendChild(lg);
+
+      const p = document.createElement('p'); p.textContent = q.prompt; p.style.marginTop='0'; p.style.fontWeight='600';
+      fs.appendChild(p);
+
+      const list = document.createElement('div');
+      list.setAttribute('role','group');
+
+      const savedAns = state.answers[realIdx];
+
+      q.options.forEach((txt, i)=>{
+        const id = `q${realIdx}_opt${i}`;
+        const label = document.createElement('label'); label.className="opt"; label.setAttribute('for', id);
+        const input = document.createElement('input'); input.type="radio"; input.name=`q_${realIdx}`; input.id=id; input.value=String(i);
+        if(savedAns === i) input.checked = true;
+        if(alreadyChecked) input.disabled = true; // LOCK: trava inputs se já conferiu
+        label.appendChild(input);
+        const span = document.createElement('span'); span.textContent = txt;
+        label.appendChild(span);
+        list.appendChild(label);
+      });
+
+      fs.appendChild(list);
+      screen.appendChild(fs);
+
+      const fb = document.createElement('div'); fb.id="fb"; fb.className="feedback hide"; fb.setAttribute('role','status'); fb.setAttribute('aria-live','polite');
+      screen.appendChild(fb);
+
+      if(alreadyChecked) showFeedback(realIdx, q);
+    }
+
+    function getSelectionFor(qIndex){
+      const realIdx = state.order[qIndex];
+      const sel = screen.querySelector(`input[name="q_${realIdx}"]:checked`);
+      return sel ? Number(sel.value) : null;
+    }
+
+    function checkCurrent(){
+      const realIdx = state.order[state.idx];
+      if(state.checked[realIdx]) return; // LOCK: ignora chamadas extras
+
+      const q = QUIZ.questions[realIdx];
+      const sel = getSelectionFor(state.idx);
+      if(sel===null) return;
+
+      state.answers[realIdx] = sel;
+
+      // Avaliação (respeita allCorrect)
+      const ok = (q.allCorrect === true) ? true : (sel === q.answer);
+
+      // Pontua APENAS na primeira conferência
+      if(ok) state.correctCount += 1;
+      state.checked[realIdx] = true;
+
+      showFeedback(realIdx, q);
+
+      // Habilita navegação e trava check
+      nextBtn.disabled = false;
+      checkBtn.disabled = true;
+
+      // Atualiza score e UI
+      const total = state.order.length;
+      scoreText.textContent = `Score: ${pct(state.correctCount,total)}%`;
+      nextBtn.textContent = (state.idx === total-1) ? "Finish" : "Next";
+
+      // Re-render para aplicar classe .locked e desabilitar inputs
+      render();
+    }
+
+    function showFeedback(realIdx, q){
+      const labels = Array.from(screen.querySelectorAll('.opt'));
+      if(q.allCorrect === true){
+        const sel = state.answers[realIdx];
+        labels.forEach((lab,i)=>{
+          lab.classList.remove('correct','wrong');
+          if(i===sel) lab.classList.add('correct');
+        });
+      }else{
+        labels.forEach((lab,i)=>{
+          lab.classList.remove('correct','wrong');
+          if(i===q.answer) lab.classList.add('correct');
+          const sel = state.answers[realIdx];
+          if(sel!==q.answer && sel===i) lab.classList.add('wrong');
+        });
+      }
+
+      const ok = (q.allCorrect===true) ? true : (state.answers[realIdx]===q.answer);
+      const fb = screen.querySelector('#fb');
+      fb.className = "feedback " + (ok? "ok":"bad");
+      fb.innerHTML = ok
+        ? `<strong>Correct.</strong> ${q.feedback||""}`
+        : `<strong>Incorrect.</strong> ${q.feedback||""}`;
+      fb.classList.remove('hide');
+    }
+
+    /* ============== NAVIGATION ============== */
+    prevBtn.addEventListener('click', ()=>{
+      if(state.idx>0){ state.idx--; render(); }
+    });
+    nextBtn.addEventListener('click', ()=>{
+      const total = state.order.length;
+      if(state.idx < total-1){
+        state.idx++; render();
+      }else{
+        finish();
+      }
+    });
+    checkBtn.addEventListener('click', checkCurrent);
+
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==="Enter" && !e.shiftKey){
+        const focused = document.activeElement;
+        const onOption = focused && focused.matches('input[type=radio]');
+        if(onOption){ e.preventDefault(); checkCurrent(); }
+      }
+    });
+
+    /* ============== FINISH ============== */
+    function finish(){
+      const total = state.order.length;
+      const scorePercent = Math.round((state.correctCount/total)*100);
+
+      document.querySelector('.footer').classList.add('hide');
+      document.querySelector('.prog').classList.add('hide');
+
+      const ok = scorePercent >= QUIZ.passScore;
+      screen.innerHTML = `
+        <div class="center">
+          <h2 style="margin-top:0">Final result</h2>
+          <p class="muted">You got <strong>${state.correctCount}</strong> out of <strong>${total}</strong> correct.</p>
+          <p class="muted">Score: <strong>${scorePercent}%</strong> (minimum to complete: ${QUIZ.passScore}%).</p>
+          <div class="spacer"></div>
+          <div class="row" style="justify-content:center">
+            <button id="retryBtn" class="btn bad">Retry</button>
+            <button id="nextChapterBtn" class="btn ok" ${ok?"":"disabled"}>${ok?"Finish chapter":"Finish chapter (locked)"}</button>
+          </div>
+          ${ok ? "" : `<p class="muted" style="margin-top:10px">Reach at least ${QUIZ.passScore}% to complete.</p>`}
+        </div>
+      `;
+
+      document.getElementById('retryBtn').addEventListener('click', ()=> location.reload());
+      document.getElementById('nextChapterBtn').addEventListener('click', ()=>{
+        if(ok) window.location.href = QUIZ.nextUrl;
+      });
+    }
+
+    // start
+    init();
+  </script>
+</body>
+</html>
