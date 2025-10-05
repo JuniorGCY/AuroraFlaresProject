@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aurora Flares — Final Chapter (Quiz)</title>
+  <title>Aurora Flares — Quiz</title>
   <style>
     :root{
       --bg:#0b0f17; --card:#111827; --muted:#9ca3af; --text:#e5e7eb;
@@ -50,7 +50,6 @@
     .hide{display:none!important}
     .center{text-align:center}
 
-    /* LOCK: visual dos inputs travados */
     .locked .opt{opacity:.9; cursor:default}
     .locked .opt:hover{background:transparent}
     :focus-visible{outline:2px solid #60a5fa;outline-offset:2px;border-radius:6px}
@@ -82,16 +81,13 @@
   </div>
 
   <script type="module">
-    /* ===========================
-       QUIZ CONFIGURATION
-       =========================== */
     const QUIZ = {
       title: "Final Chapter — Quiz",
-      nextUrl: "../certificate/index.html",
+      nextUrl: '../06/index.html',
       passScore: 70,
       shuffleQuestions: true,
       shuffleOptions: true,
-      storageKey: "aurora-quiz-final-en-v2", // bump key (evita conflito com versão anterior)
+      storageKey: "aurora-quiz-final-en-v2",
 
       questions: [
         { type: "mc",
@@ -166,13 +162,12 @@
       ]
     };
 
-    /* ============== STATE/DOM ============== */
     const titleEl = document.getElementById('quizTitle');
     const screen  = document.getElementById('screen');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const checkBtn= document.getElementById('checkBtn');
-    const bar     = document.getElementById('bar');
+    const bar = document.getElementById('bar');
     const progressText = document.getElementById('progressText');
     const scoreText    = document.getElementById('scoreText');
 
@@ -180,12 +175,11 @@
       idx: 0,
       correctCount: 0,
       answers: {},
-      checked: {},   // LOCK: true => questão já foi conferida e travada
+      checked: {},
       order: [],
       optionOrder: {}
     };
 
-    /* ============== UTILS ============== */
     function shufflePairs(arr){
       const pairs = arr.map((v,i)=>[v,i]);
       for(let i=pairs.length-1;i>0;i--){
@@ -196,7 +190,6 @@
     }
     function pct(n, d){ return d ? Math.round((n/d)*100) : 0; }
 
-    /* ============== INIT ============== */
     function init(){
       titleEl.textContent = QUIZ.title;
 
@@ -219,7 +212,6 @@
       render();
     }
 
-    /* ============== RENDER ============== */
     function render(){
       const total = state.order.length;
       const realIdx = state.order[state.idx];
@@ -232,12 +224,12 @@
       const alreadyChecked = !!state.checked[realIdx];
       prevBtn.disabled = state.idx===0;
       nextBtn.disabled = !alreadyChecked;
-      checkBtn.disabled = alreadyChecked; // LOCK: não permite “rechecar” para mudar nota
+      checkBtn.disabled = alreadyChecked;
 
       screen.innerHTML = "";
 
       const fs = document.createElement('fieldset');
-      fs.className = alreadyChecked ? 'locked' : ''; // LOCK: classe visual de bloqueio
+      fs.className = alreadyChecked ? 'locked' : '';
       const lg = document.createElement('legend'); lg.textContent = `Question ${state.idx+1}`;
       fs.appendChild(lg);
 
@@ -254,7 +246,7 @@
         const label = document.createElement('label'); label.className="opt"; label.setAttribute('for', id);
         const input = document.createElement('input'); input.type="radio"; input.name=`q_${realIdx}`; input.id=id; input.value=String(i);
         if(savedAns === i) input.checked = true;
-        if(alreadyChecked) input.disabled = true; // LOCK: trava inputs se já conferiu
+        if(alreadyChecked) input.disabled = true;
         label.appendChild(input);
         const span = document.createElement('span'); span.textContent = txt;
         label.appendChild(span);
@@ -278,33 +270,28 @@
 
     function checkCurrent(){
       const realIdx = state.order[state.idx];
-      if(state.checked[realIdx]) return; // LOCK: ignora chamadas extras
+      if(state.checked[realIdx]) return;
 
       const q = QUIZ.questions[realIdx];
       const sel = getSelectionFor(state.idx);
       if(sel===null) return;
 
       state.answers[realIdx] = sel;
-
-      // Avaliação (respeita allCorrect)
+      
       const ok = (q.allCorrect === true) ? true : (sel === q.answer);
 
-      // Pontua APENAS na primeira conferência
       if(ok) state.correctCount += 1;
       state.checked[realIdx] = true;
 
       showFeedback(realIdx, q);
 
-      // Habilita navegação e trava check
       nextBtn.disabled = false;
       checkBtn.disabled = true;
 
-      // Atualiza score e UI
       const total = state.order.length;
       scoreText.textContent = `Score: ${pct(state.correctCount,total)}%`;
       nextBtn.textContent = (state.idx === total-1) ? "Finish" : "Next";
 
-      // Re-render para aplicar classe .locked e desabilitar inputs
       render();
     }
 
@@ -334,7 +321,6 @@
       fb.classList.remove('hide');
     }
 
-    /* ============== NAVIGATION ============== */
     prevBtn.addEventListener('click', ()=>{
       if(state.idx>0){ state.idx--; render(); }
     });
@@ -356,7 +342,6 @@
       }
     });
 
-    /* ============== FINISH ============== */
     function finish(){
       const total = state.order.length;
       const scorePercent = Math.round((state.correctCount/total)*100);
@@ -385,7 +370,6 @@
       });
     }
 
-    // start
     init();
   </script>
 </body>

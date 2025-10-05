@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Aurora Flares — Capítulo 1</title>
+  <title>Chapter 1</title>
   <style>
     html,body{
       margin:0;height:100%;background:#000;overflow:hidden;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue","Noto Sans",sans-serif
     }
 
-    /* HUD à esquerda (controles) */
     #hud{
       position:fixed;left:10px;top:10px;z-index:10;color:#e5e7eb;
       background:rgba(0,0,0,.45);border:1px solid #334155;border-radius:10px;
@@ -18,7 +17,6 @@
     }
     #hud strong{font-weight:700}
 
-    /* HUD central (Tempo + Score empilhados) */
     #topHud{
       position:fixed;left:50%;top:10px;transform:translateX(-50%);
       z-index:11;display:flex;flex-direction:column;align-items:center;gap:6px;
@@ -38,7 +36,6 @@
       font-size:clamp(13px,2.6vw,16px)
     }
 
-    /* Mensagem central temporária */
     #centerHint{
       position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
       color:#e5e7eb;background:rgba(0,0,0,.35);
@@ -50,41 +47,32 @@
   </style>
 </head>
 <body>
-  <!-- HUD central (tempo + score) -->
   <div id="topHud" aria-live="polite">
     <div id="time" class="pill">0.0s</div>
     <div id="score" class="pill">Score: 0</div>
   </div>
 
-  <!-- HUD lateral (controles) -->
   <div id="hud">
-    <span><strong>Controles:</strong> ↑/↓ ou mover o mouse</span>
+    <span><strong>Controls:</strong> ↑/↓ or move the mouse</span>
   </div>
 
-  <!-- Mensagem central inicial -->
-  <div id="centerHint">Sobreviva aos Meteoros</div>
+  <div id="centerHint">Survive the Meteors</div>
 
   <script type="module">
-    /********** Config **********/
-    const NEXT_URL = '../01v4/index.html'; // para onde redirecionar após 30s
+    
+    const NEXT_URL = '../01v4/index.html'; 
     const GOAL_SECONDS = 30;
 
-    // ⚠️ Evite espaços em pastas/arquivos. Se não der, use %20.
     const PATHS = {
-      rocket: '../models/Rocketship.glb',
-      asteroid: '../models/Asteroid.glb',
-      moon: '../models/Moon.glb',
+      rocket: './models/Rocketship.glb',
+      asteroid: './models/Asteroid.glb',
+      moon: './models/Moon.glb',
     };
 
-    /********** Imports **********/
-// @ts-ignore
     const THREE = await import('https://unpkg.com/three@0.160.1/build/three.module.js');
-    // 👇 IMPORTANTE: ?module aqui
-// @ts-ignore
+    
     const { GLTFLoader } = await import('https://unpkg.com/three@0.160.1/examples/jsm/loaders/GLTFLoader.js?module');
 
-    /********** Estado global **********/
-// @ts-ignore
     let renderer, scene, camera, clock;
     let rocket, asteroidTemplate, moon;
     let running = false;
@@ -94,7 +82,6 @@
     const asteroids = [];
     const pool = [];
 
-    // HUD refs
     const timeEl  = document.getElementById('time');
     const scoreEl = document.getElementById('score');
     const hintEl  = document.getElementById('centerHint');
@@ -107,7 +94,6 @@
     };
     let spawnTimer = 0;
 
-    /********** Inicialização **********/
     initThree();
     try {
       await loadAssets();
@@ -116,12 +102,10 @@
       hintEl.textContent = 'Carregando placeholders…';
     }
 
-    // Mostra mensagem “Sobreviva aos Meteoros” por 3s
     setTimeout(()=>{ hintEl.classList.add('hide'); }, 3000);
 
     start();
 
-    /********** Three.js base **********/
     function initThree(){
       scene = new THREE.Scene();
       clock = new THREE.Clock();
@@ -150,13 +134,11 @@
       const amb = new THREE.AmbientLight(0xffffff, 0.7);
       scene.add(amb);
 
-      // Estrelas (3 camadas)
       createStarfieldLayer({ count: 600, speed: 0.25, size: 0.032, color: 0xbad4ff, twinkle: 0.4, z:-5 });
       createStarfieldLayer({ count: 400, speed: 0.35, size: 0.038, color: 0x9bbcff, twinkle: 0.6, z:-3.2 });
       createStarfieldLayer({ count: 250, speed: 0.48, size: 0.045, color: 0xffffff, twinkle: 0.8, z:-2.2 });
     }
 
-    /********** Starfield **********/
     function createStarfieldLayer({ count, speed, size, color, twinkle, z }){
       const geo = new THREE.BufferGeometry();
       const positions = new Float32Array(count*3);
@@ -194,11 +176,10 @@
       });
     }
 
-    /********** Assets **********/
     async function loadAssets(){
       const loader = new GLTFLoader();
 
-      // Lua
+      
       try {
         const gltf = await loader.loadAsync(PATHS.moon);
         moon = gltf.scene;
@@ -216,7 +197,6 @@
         scene.add(moon);
       }
 
-      // Foguete
       try {
         const gltf = await loader.loadAsync(PATHS.rocket);
         rocket = gltf.scene;
@@ -238,7 +218,6 @@
         scene.add(rocket);
       }
 
-      // Asteroide base
       try {
         const gltf = await loader.loadAsync(PATHS.asteroid);
         asteroidTemplate = gltf.scene;
@@ -251,7 +230,6 @@
       }
     }
 
-    /********** Controles **********/
     window.addEventListener('keydown', (e)=>{
       if(!running) return;
       if(e.key==='ArrowUp'){ targetY = Math.min(targetY + 1.2,  WORLD.height/2 - 0.6); }
@@ -271,7 +249,6 @@
       }
     }, { passive:true });
 
-    /********** Asteroides **********/
     function makeAsteroid(){
       let obj = pool.pop();
       if(!obj){
@@ -310,7 +287,6 @@
       }
     }
 
-    /********** Colisão **********/
     function checkCollision(){
       if(!rocket) return;
       const rp = new THREE.Vector3(); rocket.getWorldPosition(rp);
@@ -322,7 +298,6 @@
       }
     }
 
-    /********** Loop **********/
     function start(){
       running = true;
       score = 0; survived = 0;
@@ -341,11 +316,10 @@
       spawnTimer = 0; WORLD.speed = 8;
       if(rocket){ rocket.position.y = 0; targetY = 0; }
 
-      // Mostra rapidamente a dica de colisão
-      hintEl.textContent = 'Cuidado! Você colidiu.';
+      hintEl.textContent = 'Careful! You collided.';
       hintEl.classList.remove('hide');
       setTimeout(()=>{
-        hintEl.textContent = 'Sobreviva aos Meteoros';
+        hintEl.textContent = 'Survive the Meteors';
         hintEl.classList.add('hide');
       }, 900);
     }

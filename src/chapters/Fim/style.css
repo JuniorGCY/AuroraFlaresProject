@@ -1,0 +1,133 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(45deg, #1d2b64, #f8a8b8);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: white;
+  font-size: 18px;
+  position: relative;
+  flex-direction: column;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+#explorationScreen {
+  overflow-y: scroll;
+  max-height: 90vh;
+  width: 60%;
+  padding-right: 10px;
+}
+
+.container {
+  text-align: center;
+  animation: fadeIn 1s ease-out;
+}
+
+h1 {
+  font-size: 3.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  text-shadow: 3px 3px 15px rgba(255, 255, 255, 0.7), 0 0 25px rgba(0, 255, 255, 0.5);
+}
+
+button {
+  padding: 20px 40px;
+  background-color: transparent;
+  border: 2px solid #a18bc5;
+  color: #ffffff;
+  font-size: 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 5px 20px rgba(185, 117, 216, 0.5);
+}
+
+button:hover {
+  background-color: transparent;
+  color: #f1c8ff;
+  transform: scale(1.1);
+  box-shadow: 0 8px 30px rgba(183, 99, 190, 0.7);
+  border-color: #a764bb;
+}
+
+button:active {
+  transform: scale(1.05);
+  color: #20B2AA;
+}
+
+h2 {
+  font-size: 1.4rem;
+  margin-top: 20px;
+  font-weight: 300;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.window {
+  padding: 20px 40px;
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  gap: 20px;
+  background-color: transparent;
+  border: 2px solid #a18bc5;
+  color: #ffffff;
+  font-size: 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 5px 20px rgba(185, 117, 216, 0.5);
+}
+
+.window:hover {
+  background-color: transparent;
+  color: #f1c8ff;
+  transform: scale(1.1);
+  box-shadow: 0 8px 30px rgba(183, 99, 190, 0.7);
+  border-color: #a764bb;
+}
+
+.window:active {
+  transform: scale(1.05);
+  color: #20B2AA;
+}
+
+.logo {
+  width: 200px;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.logo:hover {
+  transform: scale(1.1);
+}

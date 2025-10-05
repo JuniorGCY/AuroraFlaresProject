@@ -3,20 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aurora Flares — Capítulo 1</title>
+  <title>Chapter 1</title>
   <style>
     html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;overflow:hidden}
     #stage{position:fixed;inset:0}
     video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
-
-    /* HUD discreto p/ debug/estado */
+    
     #hud{
       position:fixed;right:10px;top:10px;max-width:46ch;
       background:rgba(0,0,0,.65);color:#e5e7eb;border:1px solid #334155;
       border-radius:10px;padding:8px 10px;font-size:12px;z-index:40;white-space:pre-wrap
     }
-
-    /* Efeito “piscar” (opcional) */
+    
     #blinkTop,#blinkBottom{position:fixed;left:0;right:0;background:#000;z-index:50;pointer-events:none}
     #blinkTop{top:0;height:0} #blinkBottom{bottom:0;height:0}
     .blink-open #blinkTop{animation:blinkTopOpen .24s ease forwards}
@@ -36,11 +34,11 @@
   <div id="blinkBottom"></div>
 
   <script type="module">
-    // ================= CONFIG =================
-    const VIDEO_SRC = '../../../assets/videos/Cap1Final.mp4'; // caminho real (com extensão)
-    const NEXT_URL  = '../01v2/index.html';                   // próxima página DEPOIS do vídeo
-    const MAX_FALLBACK_MS = 2 * 60 * 1000;                    // failsafe duro: 2 min
-    // ==========================================
+    
+    const VIDEO_SRC = '../../../assets/videos/Cap1Final.mp4'; 
+    const NEXT_URL  = '../01v2/index.html';                   
+    const MAX_FALLBACK_MS = 2 * 60 * 1000;                    
+    
 
     const hud   = document.getElementById('hud');
     const video = document.getElementById('vid');
@@ -52,7 +50,7 @@
       document.getElementById('blinkTop').style.height = '50vh';
       document.getElementById('blinkBottom').style.height = '50vh';
       root.classList.remove('blink-open');
-      // abre rápido
+      
       root.classList.add('blink-open');
       await wait(280);
       root.classList.remove('blink-open');
@@ -62,16 +60,15 @@
 
     function goNext(){ window.location.href = NEXT_URL; }
 
-    // Fallback: se 'ended' não disparar por algum bug, ao chegar ~97% segue
+    
     function armProgressFallback(){
       video.addEventListener('timeupdate', ()=>{
         if (video.duration && video.currentTime / video.duration > 0.97) goNext();
       });
     }
 
-    // Fluxo principal automático
     async function flow(){
-      // cache-bust simples para evitar vídeo antigo do cache
+      
       const src = VIDEO_SRC + (VIDEO_SRC.includes('?') ? '&' : '?') + '_cb=' + Date.now();
       video.src = src;
 
@@ -79,8 +76,7 @@
       try { video.load(); } catch {}
 
       await openEyes();
-
-      // Tentar autoplay em mute (política mobile)
+      
       try{
         video.muted = true;
         video.playsInline = true;
@@ -89,21 +85,19 @@
         await video.play();
         log('');
       }catch(err){
-        // Se ainda assim não reproduzir, loga e segue timeline de segurança
+      
         log('Autoplay bloqueado ou falha na reprodução. Prosseguirá automaticamente.');
       }
 
-      // Navegar ao terminar
+      
       video.addEventListener('ended', ()=>{
         log('Vídeo concluído. Indo para a próxima página…');
         goNext();
       });
 
-      // Fallbacks de continuidade
       armProgressFallback();
       setTimeout(()=>{ log('Tempo máximo atingido. Seguindo…'); goNext(); }, MAX_FALLBACK_MS);
 
-      // (opcional) Pausar quando perder visibilidade; retomar ao voltar
       document.addEventListener('visibilitychange', ()=>{
         if (document.hidden){ try{ video.pause(); }catch{} }
         else{ video.play().catch(()=>{}) }

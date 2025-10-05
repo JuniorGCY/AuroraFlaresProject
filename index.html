@@ -3,46 +3,129 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Aurora Flares Project — Início</title>
+    <title>Aurora's surf</title>
     <style>
-      html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial; }
+      body { 
+        margin: 0;
+        padding: 0;
+        font-family: 'Roboto', sans-serif;
+        background: linear-gradient(45deg, #1d2b64, #f8a8b8);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: white;
+        font-size: 18px;
+        position: relative;
+      }
 
-      /* Fundo animado (canvas ocupa a tela toda) */
-      #spaceBg { position:fixed; inset:0; z-index:0; display:block; }
+      body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('https://www.transparenttextures.com/patterns/stardust.png');
+        z-index: -1;
+        animation: stars 2s linear infinite;
+        opacity: 1; 
+      }
 
-      /* Tela inicial */
+      @keyframes stars {
+        from { background-position: 0 0; }
+        to { background-position: 1000px 1000px; }
+      }
+
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #spaceBg { 
+        text-align: center;
+        animation: fadeIn 1s ease-out; 
+      }
+
       #startScreen {
         position:fixed; inset:0; z-index:1;
         display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
         text-align:center; padding:24px;
       }
-      .title { font-size:clamp(28px,6vw,64px); font-weight:800; color:#e5e7eb; letter-spacing:.5px; text-shadow:0 8px 40px rgba(0,0,0,.6); }
-      .subtitle { color:#9ca3af; font-size:clamp(14px,2.5vw,18px); margin-top:-6px; }
-      .btnPrimary {
-        background:#3b82f6; color:#fff; border:none; border-radius:999px;
-        padding:12px 24px; font-size:16px; cursor:pointer;
-        box-shadow:0 10px 30px rgba(59,130,246,.35); transition:filter .15s ease;
-      }
-      .btnPrimary:hover { filter:brightness(1.08); }
-      .hint { color:#9ca3af; font-size:12px; margin-top:8px; }
 
-      .fadeOut { animation:fadeOut .35s ease forwards; }
-      @keyframes fadeOut { to { opacity:0; visibility:hidden; } }
+      .logo {
+        width: 200px;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5)); /* Sombra suave para destacar a logo */
+      }
+
+      .logo:hover {
+        transform: scale(1.1);
+      }
+
+      .title { 
+        font-size: 3.5rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-bottom: 30px;
+        text-shadow: 3px 3px 15px rgba(255, 255, 255, 0.7), 0 0 25px rgba(0, 255, 255, 0.5);
+      }
+
+      .subtitle { 
+        color:#ffffff; 
+        font-size:clamp(14px,2.5vw,18px); 
+        margin-top:-6px; 
+      }
+      
+      .btnPrimary {
+        padding: 20px 40px;
+        background-color: transparent;
+        border: 2px solid #a18bc5;
+        color: #ffffff; 
+        font-size: 1.5rem;
+        border-radius: 10px;
+        cursor: pointer;
+        text-transform: uppercase;
+        font-weight: bold;
+        transition: all 0.3s ease-in-out;
+        box-shadow: 0 5px 20px rgba(185, 117, 216, 0.5);
+      }
+
+      .btnPrimary:hover { 
+        background-color: transparent;
+        color: #f1c8ff;
+        transform: scale(1.1);
+        box-shadow: 0 8px 30px rgba(183, 99, 190, 0.7);
+        border-color: #a764bb;
+      }
+
+      .hint { 
+        color:#ffffff; 
+        font-size:clamp(14px,2.5vw,18px); 
+        margin-top:-6px; 
+      }
     </style>
   </head>
   <body>
-    <!-- Fundo animado de estrelas -->
-    <canvas id="spaceBg"></canvas>
-
-    <!-- Tela inicial -->
     <div id="startScreen">
-      <div class="title">Aurora Flares Project</div>
-      <div class="subtitle">clique em Start para começar</div>
+      
+      <img src="logo.jpg" alt="Aurora's Surf Logo" class="logo">
+      
+      <div class="title">Aurora's surf</div>
+      <div class="subtitle">click on Start to begin</div>
       <button id="btnStart" class="btnPrimary">Start</button>
-      <div class="hint">ou pressione Enter</div>
+      <div class="hint">or press Enter</div>
     </div>
 
-    <!-- Lógica da tela inicial: redirecionar para o Capítulo 1 -->
     <script>
       const startScreen = document.getElementById('startScreen');
       const btnStart = document.getElementById('btnStart');
@@ -55,7 +138,6 @@
       window.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') goChapter1(); });
     </script>
 
-    <!-- Starfield (Canvas 2D) -->
     <script>
       (function(){
         const c = document.getElementById('spaceBg');
@@ -70,26 +152,28 @@
           c.style.height= innerHeight+'px';
           makeStars();
         }
+
         function makeStars(){
           const count = Math.floor((innerWidth*innerHeight)/2800);
           stars = new Array(count).fill(0).map(()=>({
             x: Math.random()*w,
             y: Math.random()*h,
-            z: Math.random()*0.8+0.2, // profundidade
+            z: Math.random()*0.8+0.2, 
             r: Math.random()*1.5+0.2,
             tw: Math.random()*Math.PI*2,
-            sp: Math.random()*0.3+0.05 // velocidade
+            sp: Math.random()*0.3+0.05 
           }));
         }
+
         function loop(){
           requestAnimationFrame(loop);
 
-          // fundo gradiente
+          
           const g = ctx.createRadialGradient(w*0.5,h*0.6,0,w*0.5,h*0.6,Math.max(w,h)*0.8);
           g.addColorStop(0,'#02030a'); g.addColorStop(1,'#000');
           ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
 
-          // nebulosas sutis
+          
           for(let i=0;i<2;i++){
             const nx = Math.sin(performance.now()*0.0001+i)*w*0.25 + w*0.5;
             const ny = Math.cos(performance.now()*0.00013+i)*h*0.25 + h*0.4;
@@ -99,19 +183,19 @@
             ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(nx,ny,Math.max(w,h)*0.35,0,Math.PI*2); ctx.fill();
           }
 
-          // estrelas
+          
           ctx.save(); ctx.globalCompositeOperation='lighter';
           for(const s of stars){
             s.x += s.sp * s.z * 0.6;
             if (s.x > w+5) s.x = -5;
-            const twinkle = (Math.sin(s.tw += 0.05)+1)*0.5; // 0..1
+            const twinkle = (Math.sin(s.tw += 0.05)+1)*0.5; 
             const radius = (s.r + twinkle*0.6) * dpr;
             ctx.fillStyle = `rgba(${200+55*s.z|0}, ${200+30*twinkle|0}, 255, ${0.6 + 0.4*twinkle})`;
             ctx.beginPath(); ctx.arc(s.x, s.y, radius, 0, Math.PI*2); ctx.fill();
           }
           ctx.restore();
 
-          // shooting star esporádica
+          
           if (Math.random() < 0.01){
             const sx = Math.random()*w*0.6, sy = Math.random()*h*0.4;
             ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1*dpr;
