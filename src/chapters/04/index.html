@@ -32,8 +32,8 @@
 
   <div id="tapOverlay" role="button" tabindex="0" aria-label="Iniciar vídeo">
     <div class="tapBox">
-      Toque para iniciar o vídeo
-      <div class="tapSmall">Alguns dispositivos exigem interação do usuário</div>
+      Tap to start the video
+      <div class="tapSmall">Some devices require user interaction</div>
     </div>
   </div>
 
@@ -76,10 +76,6 @@
     tapOverlay.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') startOnTap(); });
 
     video.addEventListener('ended', goNext);
-
-    video.addEventListener('timeupdate', ()=>{
-      if (video.duration && video.currentTime / video.duration > 0.97) goNext();
-    });
 
     setTimeout(goNext, MAX_FALLBACK_MS);
 

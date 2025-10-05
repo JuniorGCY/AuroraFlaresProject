@@ -28,7 +28,7 @@
     <video id="vid" playsinline muted preload="auto"></video>
   </div>
 
-  <div id="hud">iniciando…</div>
+  <div id="hud">starting…</div>
 
   <div id="blinkTop"></div>
   <div id="blinkBottom"></div>
@@ -72,7 +72,7 @@
       const src = VIDEO_SRC + (VIDEO_SRC.includes('?') ? '&' : '?') + '_cb=' + Date.now();
       video.src = src;
 
-      log('Carregando vídeo…');
+      log('Loading video…');
       try { video.load(); } catch {}
 
       await openEyes();
@@ -86,17 +86,17 @@
         log('');
       }catch(err){
       
-        log('Autoplay bloqueado ou falha na reprodução. Prosseguirá automaticamente.');
+        log('Autoplay blocked or playback failed. It will proceed automatically.');
       }
 
       
       video.addEventListener('ended', ()=>{
-        log('Vídeo concluído. Indo para a próxima página…');
+        log('Video completed. Moving on to the next page…');
         goNext();
       });
 
       armProgressFallback();
-      setTimeout(()=>{ log('Tempo máximo atingido. Seguindo…'); goNext(); }, MAX_FALLBACK_MS);
+      setTimeout(()=>{ log('Maximum time reached. Continuing…'); goNext(); }, MAX_FALLBACK_MS);
 
       document.addEventListener('visibilitychange', ()=>{
         if (document.hidden){ try{ video.pause(); }catch{} }
