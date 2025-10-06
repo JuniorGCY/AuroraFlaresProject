@@ -2,95 +2,120 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chapter 1</title>
   <style>
-    html,body{
-      margin:0;height:100%;background:#000;overflow:hidden;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue","Noto Sans",sans-serif
+    html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;overflow:hidden}
+    #stage{position:fixed;inset:0}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+    
+    #hud{
+      position:fixed;right:10px;top:10px;max-width:46ch;
+      background:rgba(0,0,0,.65);color:#e5e7eb;border:1px solid #334155;
+      border-radius:10px;padding:8px 10px;font-size:12px;z-index:40;white-space:pre-wrap
     }
-    #wrap{position:fixed;inset:0}
-    #vid{
-      position:absolute;inset:0;width:100%;height:100%;
-      object-fit:cover;background:#000;display:block
-    }
-
-    #tapOverlay{
-      position:fixed;inset:0;display:none;place-items:center;z-index:5;
-      background:rgba(0,0,0,.55);color:#e5e7eb;text-align:center
-    }
-    .tapBox{
-      border:1px solid #334155;border-radius:14px;padding:18px 22px;
-      background:rgba(0,0,0,.35);box-shadow:0 8px 32px rgba(0,0,0,.5)
-    }
-    .tapSmall{font-size:12px;color:#9ca3af;margin-top:6px}
+    
+    #blinkTop,#blinkBottom{position:fixed;left:0;right:0;background:#000;z-index:50;pointer-events:none}
+    #blinkTop{top:0;height:0} #blinkBottom{bottom:0;height:0}
+    .blink-open #blinkTop{animation:blinkTopOpen .24s ease forwards}
+    .blink-open #blinkBottom{animation:blinkBottomOpen .24s ease forwards}
+    @keyframes blinkTopOpen{from{height:50vh} to{height:0}}
+    @keyframes blinkBottomOpen{from{height:50vh} to{height:0}}
   </style>
 </head>
 <body>
-  <div id="wrap" aria-label="Cinemática">
-    <video id="vid" preload="auto" muted playsinline></video>
+  <div id="stage">
+    <video id="vid" playsinline preload="auto"></video>
   </div>
 
-  <div id="tapOverlay" role="button" tabindex="0" aria-label="Iniciar vídeo">
-    <div class="tapBox">
-      Tap to start the video
-      <div class="tapSmall">Alguns dispositivos exigem interação do usuário</div>
-    </div>
-  </div>
+  <div id="hud">starting…</div>
+
+  <div id="blinkTop"></div>
+  <div id="blinkBottom"></div>
 
   <script type="module">
     const VIDEO_SRC = '../../../assets/videos/Cap1.5Final.mp4'; 
-    const NEXT_URL  = '../02/index.html'; 
-    const MAX_FALLBACK_MS = 3 * 60 * 1000; 
+    const NEXT_URL  = '../02/index.html';                   
+    const MAX_FALLBACK_MS = 2 * 60 * 1000;                    
 
+    const hud   = document.getElementById('hud');
     const video = document.getElementById('vid');
-    const tapOverlay = document.getElementById('tapOverlay');
+    const log = (m)=>{ hud.textContent = String(m); console.log('[flow]', m); };
+
+    const wait = (ms)=> new Promise(r=>setTimeout(r, ms));
+    async function openEyes(){
+      const root = document.documentElement;
+      document.getElementById('blinkTop').style.height = '50vh';
+      document.getElementById('blinkBottom').style.height = '50vh';
+      root.classList.remove('blink-open');
+      root.classList.add('blink-open');
+      await wait(280);
+      root.classList.remove('blink-open');
+      document.getElementById('blinkTop').style.height = '0';
+      document.getElementById('blinkBottom').style.height = '0';
+    }
 
     function goNext(){ window.location.href = NEXT_URL; }
 
-    async function playAuto(){
-      const src = VIDEO_SRC + (VIDEO_SRC.includes('?') ? '&' : '?') + '_cb=' + Date.now();
-      video.src = src;
-      video.muted = true;
-      video.playsInline = true;
-      video.setAttribute('playsinline','');
-      video.setAttribute('webkit-playsinline','');
-
-      try {
-        await video.play();
-      } catch (err) {
-        tapOverlay.style.display = 'grid';
-      }
+    function armProgressFallback(){
+      video.addEventListener('timeupdate', ()=>{
+        if (video.duration && video.currentTime / video.duration > 0.97) goNext();
+      });
     }
 
-    const startOnTap = async () => {
-      tapOverlay.style.display = 'none';
+    function enableSoundNow(){
       try {
         video.muted = false;
+        if (typeof video.volume === 'number') video.volume = 1.0;
+        video.play?.().catch(()=>{});
+      } catch {}
+      window.removeEventListener('click', enableSoundNow, true);
+      window.removeEventListener('keydown', enableSoundNow, true);
+      window.removeEventListener('touchstart', enableSoundNow, true);
+    }
+
+    async function flow(){
+      const src = VIDEO_SRC + (VIDEO_SRC.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+      video.src = src;
+
+      log('Loading video…');
+      try { video.load(); } catch {}
+
+      await openEyes();
+
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+
+      try{
+       
+        video.muted = false;
+        if (typeof video.volume === 'number') video.volume = 1.0;
         await video.play();
-      } catch (e) {
-        video.muted = true;
-        try { await video.play(); } catch {}
+        log('');
+      }catch(err){
+        
+        log('To enable audio, tap/click or press any key.');
+        window.addEventListener('click', enableSoundNow, true);
+        window.addEventListener('keydown', enableSoundNow, true);
+        window.addEventListener('touchstart', enableSoundNow, true);
       }
-    };
-    tapOverlay.addEventListener('click', startOnTap);
-    tapOverlay.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') startOnTap(); });
 
-    video.addEventListener('ended', goNext);
+      video.addEventListener('ended', ()=>{
+        log('Video completed. Moving on to the next page…');
+        goNext();
+      });
 
-    video.addEventListener('timeupdate', ()=>{
-      if (video.duration && video.currentTime / video.duration > 0.97) goNext();
-    });
+      armProgressFallback();
+      setTimeout(()=>{ log('Maximum time reached. Continuing…'); goNext(); }, MAX_FALLBACK_MS);
 
-    
-    setTimeout(goNext, MAX_FALLBACK_MS);
+      document.addEventListener('visibilitychange', ()=>{
+        if (document.hidden){ try{ video.pause(); }catch{} }
+        else{ video.play().catch(()=>{}) }
+      });
+    }
 
-    document.addEventListener('visibilitychange', ()=>{
-      if (document.hidden) { try { video.pause(); } catch {} }
-      else { try { video.play(); } catch {} }
-    });
-
-    playAuto();
+    flow();
   </script>
 </body>
 </html>

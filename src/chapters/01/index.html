@@ -25,7 +25,7 @@
 </head>
 <body>
   <div id="stage">
-    <video id="vid" playsinline muted preload="auto"></video>
+    <video id="vid" playsinline preload="auto"></video>
   </div>
 
   <div id="hud">starting…</div>
@@ -34,11 +34,9 @@
   <div id="blinkBottom"></div>
 
   <script type="module">
-    
     const VIDEO_SRC = '../../../assets/videos/Cap1Final.mp4'; 
     const NEXT_URL  = '../01v2/index.html';                   
     const MAX_FALLBACK_MS = 2 * 60 * 1000;                    
-    
 
     const hud   = document.getElementById('hud');
     const video = document.getElementById('vid');
@@ -50,7 +48,6 @@
       document.getElementById('blinkTop').style.height = '50vh';
       document.getElementById('blinkBottom').style.height = '50vh';
       root.classList.remove('blink-open');
-      
       root.classList.add('blink-open');
       await wait(280);
       root.classList.remove('blink-open');
@@ -60,15 +57,24 @@
 
     function goNext(){ window.location.href = NEXT_URL; }
 
-    
     function armProgressFallback(){
       video.addEventListener('timeupdate', ()=>{
         if (video.duration && video.currentTime / video.duration > 0.97) goNext();
       });
     }
 
+    function enableSoundNow(){
+      try {
+        video.muted = false;
+        if (typeof video.volume === 'number') video.volume = 1.0;
+        video.play?.().catch(()=>{});
+      } catch {}
+      window.removeEventListener('click', enableSoundNow, true);
+      window.removeEventListener('keydown', enableSoundNow, true);
+      window.removeEventListener('touchstart', enableSoundNow, true);
+    }
+
     async function flow(){
-      
       const src = VIDEO_SRC + (VIDEO_SRC.includes('?') ? '&' : '?') + '_cb=' + Date.now();
       video.src = src;
 
@@ -76,20 +82,25 @@
       try { video.load(); } catch {}
 
       await openEyes();
-      
+
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+
       try{
-        video.muted = true;
-        video.playsInline = true;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('webkit-playsinline', '');
+       
+        video.muted = false;
+        if (typeof video.volume === 'number') video.volume = 1.0;
         await video.play();
         log('');
       }catch(err){
-      
-        log('Autoplay blocked or playback failed. It will proceed automatically.');
+        
+        log('To enable audio, tap/click or press any key.');
+        window.addEventListener('click', enableSoundNow, true);
+        window.addEventListener('keydown', enableSoundNow, true);
+        window.addEventListener('touchstart', enableSoundNow, true);
       }
 
-      
       video.addEventListener('ended', ()=>{
         log('Video completed. Moving on to the next page…');
         goNext();
